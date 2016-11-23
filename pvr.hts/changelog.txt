@@ -1,4 +1,7 @@
-3.2.22
+2.2.23
+- improve EPG loading performance
+
+2.2.22
 - fixed: setting channel type for 'early' htsp v25 servers
 - fixed: setting epg uid for timers
 

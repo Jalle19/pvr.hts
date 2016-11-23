@@ -1259,7 +1259,7 @@ PVR_ERROR CTvheadend::GetEpg
   htsmsg_field_t *f;
   int n = 0;
 
-  Logger::Log(LogLevel::LEVEL_TRACE, "get epg channel %d start %ld stop %ld", chn.iUniqueId,
+  Logger::Log(LogLevel::LEVEL_DEBUG, "get epg channel %d start %ld stop %ld", chn.iUniqueId,
            (long long)start, (long long)end);
 
   /* Async transfer */
@@ -1372,7 +1372,7 @@ bool CTvheadend::Connected ( void )
     return false;
 
   htsmsg_destroy(msg);
-  Logger::Log(LogLevel::LEVEL_DEBUG, "async updates requested");
+  Logger::Log(LogLevel::LEVEL_INFO, "async updates requested");
 
   return true;
 }
@@ -1538,6 +1538,8 @@ void* CTvheadend::Process ( void )
 
 void CTvheadend::SyncCompleted ( void )
 {
+  Logger::Log(LogLevel::LEVEL_INFO, "async updates initialised");
+
   /* The complete calls are probably redundant, but its a safety feature */
   SyncChannelsCompleted();
   SyncDvrCompleted();
@@ -2172,16 +2174,8 @@ bool CTvheadend::ParseEvent ( htsmsg_t *msg, bool bAdd, Event &evt )
     evt.SetPart(u32);
 
   /* Add optional recording link */
-  auto rit = std::find_if(
-    m_recordings.cbegin(), 
-    m_recordings.cend(), 
-    [evt](const RecordingMapEntry &entry)
-  {
-    return entry.second.GetEventId() == evt.GetId();
-  });
-
-  if (rit != m_recordings.cend())
-    evt.SetRecordingId(evt.GetId());
+  if (!htsmsg_get_u32(msg, "dvrId", &u32))
+    evt.SetRecordingId(u32);
   
   return true;
 }
