@@ -35,7 +35,7 @@ CHTSPDemuxer::CHTSPDemuxer ( CHTSPConnection &conn )
   : m_conn(conn), m_pktBuffer((size_t)-1),
     m_seekTime(INVALID_SEEKTIME),
     m_seeking(false), m_speedChange(false),
-    m_subscription(conn), m_lastUse(0)
+    m_subscription(conn), m_lastUse(0), m_gotIframe(false)
 {
 }
 
@@ -372,13 +372,6 @@ void CHTSPDemuxer::ParseMuxPacket ( htsmsg_t *m )
     return;
   }
 
-  /* Drop packets for unknown streams */
-  if (m_streamStat.find(idx) == m_streamStat.end())
-  {
-    Logger::Log(LogLevel::LEVEL_DEBUG, "Dropped packet with unknown stream index %i", idx);
-    return;
-  }
-
   /* Record */
   m_streamStat[idx]++;
 
@@ -404,13 +397,24 @@ void CHTSPDemuxer::ParseMuxPacket ( htsmsg_t *m )
   else
     pkt->pts      = DVD_NOPTS_VALUE;
 
-  /* Type (for debug only) */
+  /* Frame type */
   if (!htsmsg_get_u32(m, "frametype", &u32))
     type = (char)u32;
   if (!type)
     type = '_';
 
-  ignore = m_seeking || m_speedChange;
+  /* Trigger a stream change once we have an I-frame */
+  if (!m_gotIframe && type == 'I')
+  {
+    m_gotIframe = true;
+
+    Logger::Log(LogLevel::LEVEL_DEBUG, "demux stream change");
+    DemuxPacket *streamChange = PVR->AllocateDemuxPacket(0);
+    streamChange->iStreamId = DMX_SPECIALID_STREAMCHANGE;
+    m_pktBuffer.Push(streamChange);
+  }
+
+  ignore = m_seeking || m_speedChange || !m_gotIframe;
 
   Logger::Log(LogLevel::LEVEL_TRACE, "demux pkt idx %d:%d type %c pts %lf len %lld%s",
            idx, pkt->iStreamId, type, pkt->pts, (long long)binlen,
@@ -427,7 +431,6 @@ void CHTSPDemuxer::ParseSubscriptionStart ( htsmsg_t *m )
 {
   htsmsg_t       *l;
   htsmsg_field_t *f;
-  DemuxPacket    *pkt;
 
   /* Validate */
   if ((l = htsmsg_get_list(m, "streams")) == NULL)
@@ -439,6 +442,7 @@ void CHTSPDemuxer::ParseSubscriptionStart ( htsmsg_t *m )
   Logger::Log(LogLevel::LEVEL_DEBUG, "demux subscription start");
   m_streamStat.clear();
   m_streams.iStreamCount = 0;
+  m_gotIframe = false;
 
   /* Process each */
   int count = 0;
@@ -536,11 +540,8 @@ void CHTSPDemuxer::ParseSubscriptionStart ( htsmsg_t *m )
   }
 
   /* Update streams */
-  Logger::Log(LogLevel::LEVEL_DEBUG, "demux stream change");
+  Logger::Log(LogLevel::LEVEL_DEBUG, "demux updating streams");
   m_streams.iStreamCount = count;
-  pkt = PVR->AllocateDemuxPacket(0);
-  pkt->iStreamId = DMX_SPECIALID_STREAMCHANGE;
-  m_pktBuffer.Push(pkt);
 
   /* Source data */
   ParseSourceInfo(htsmsg_get_map(m, "sourceinfo"));
