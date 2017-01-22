@@ -298,7 +298,7 @@ bool CanSeekStream(void)
 
 bool IsTimeshifting(void)
 {
-  return tvh->DemuxGetTimeshiftTime() != 0;
+  return tvh->DemuxIsTimeShifting();
 }
 
 bool OpenLiveStream(const PVR_CHANNEL &channel)

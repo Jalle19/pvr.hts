@@ -1,3 +1,10 @@
+2.2.24
+- improved: use the default retention (from server configuration)
+- improved: buffering method when timeshifting
+- fixed: possible empty duplicate detection field when opening a timer rule
+- fixed: possible time offset when tuning a channel with predictive tuning enabled
+- fixed: unresponsiveness when wrong credentials are used
+
 2.2.23
 - improve EPG loading performance
 

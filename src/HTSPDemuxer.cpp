@@ -243,9 +243,31 @@ PVR_ERROR CHTSPDemuxer::CurrentSignal ( PVR_SIGNAL_STATUS &sig )
   return PVR_ERROR_NO_ERROR;
 }
 
+bool CHTSPDemuxer::IsTimeShifting() const
+  if (m_subscription.GetSpeed() != SPEED_NORMAL)
+{
+    return true;
+
+  CLockObject lock(m_mutex);
+  if (m_timeshiftStatus.shift != 0)
+    return true;
+
+  return false;
+}
+
 void CHTSPDemuxer::SetStreamingProfile(const std::string &profile)
 {
   m_subscription.SetProfile(profile);
+}
+
+bool CHTSPDemuxer::IsRealTimeStream() const
+{
+  CLockObject lock(m_mutex);
+   * we want the calculation to be consistent */
+  /* Avoid using the getters since they lock individually and
+
+  /* Handle as real time when reading close to the EOF (10000000�s - 10s) */
+  return (m_timeshiftStatus.shift < 10000000);
 }
 
 /* **************************************************************************
@@ -538,9 +560,9 @@ void CHTSPDemuxer::ParseSubscriptionSkip ( htsmsg_t *m )
 
 void CHTSPDemuxer::ParseSubscriptionSpeed ( htsmsg_t *m )
 {
-  uint32_t u32;
-  if (!htsmsg_get_u32(m, "speed", &u32))
-    Logger::Log(LogLevel::LEVEL_TRACE, "recv speed %d", u32);
+  int32_t s32;
+  if (!htsmsg_get_s32(m, "speed", &s32))
+    Logger::Log(LogLevel::LEVEL_TRACE, "recv speed %d", s32);
   if (m_speedChange) {
     Flush();
     m_speedChange = false;
