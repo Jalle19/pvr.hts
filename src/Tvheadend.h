@@ -205,7 +205,7 @@ private:
   bool        SendAuth         ( const std::string &u, const std::string &p );
 
   PLATFORM::CTcpSocket               *m_socket;
-  PLATFORM::CMutex                    m_mutex;
+  mutable PLATFORM::CMutex            m_mutex;
   CHTSPRegister                       m_regThread;
   PLATFORM::CCondition<volatile bool> m_regCond;
   bool                                m_ready;
@@ -278,7 +278,7 @@ public:
   void SetStreamingProfile(const std::string &profile);
 
 private:
-  PLATFORM::CMutex                        m_mutex;
+  mutable PLATFORM::CMutex                m_mutex;
   CHTSPConnection                        &m_conn;
   PLATFORM::SyncedBuffer<DemuxPacket*>    m_pktBuffer;
   ADDON::XbmcStreamProperties             m_streams;
@@ -427,7 +427,7 @@ private:
    */
   tvheadend::Profiles         m_profiles;
 
-  PLATFORM::CMutex            m_mutex;
+  mutable PLATFORM::CMutex    m_mutex;
 
   CHTSPConnection             m_conn;
 
