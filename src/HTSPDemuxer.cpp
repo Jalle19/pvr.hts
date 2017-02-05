@@ -244,8 +244,8 @@ PVR_ERROR CHTSPDemuxer::CurrentSignal ( PVR_SIGNAL_STATUS &sig )
 }
 
 bool CHTSPDemuxer::IsTimeShifting() const
-  if (m_subscription.GetSpeed() != SPEED_NORMAL)
 {
+  if (m_subscription.GetSpeed() != SPEED_NORMAL)
     return true;
 
   CLockObject lock(m_mutex);
@@ -262,9 +262,9 @@ void CHTSPDemuxer::SetStreamingProfile(const std::string &profile)
 
 bool CHTSPDemuxer::IsRealTimeStream() const
 {
-  CLockObject lock(m_mutex);
-   * we want the calculation to be consistent */
   /* Avoid using the getters since they lock individually and
+   * we want the calculation to be consistent */
+  CLockObject lock(m_mutex);
 
   /* Handle as real time when reading close to the EOF (10000000�s - 10s) */
   return (m_timeshiftStatus.shift < 10000000);
